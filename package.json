@@ -1,0 +1,29 @@
+{
+  "name": "cf-pages-action",
+  "version": "1.0.0",
+  "description": "Action for Cloudflare Pages deployment",
+  "main": "index.ts",
+  "scripts": {
+		"build": "npx esbuild src/index.ts --bundle --platform=node --target=es2021 --outfile=index.js",
+		"prepare": "husky install",
+		"prettify": "prettier . --write --ignore-unknown"
+	},
+  "dependencies": {
+		"@actions/core": "^1.10.0",
+		"@actions/github": "^5.1.1",
+		"@cloudflare/types": "^6.18.16",
+		"shellac": "^0.7.2",
+		"undici": "^5.11.0"
+	},
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^18.11.3",
+		"esbuild": "^0.15.12",
+		"husky": "^8.0.1",
+		"prettier": "^2.8.1",
+		"typescript": "^4.6.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
