@@ -25040,7 +25040,11 @@ try {
       $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
     }
   
-    $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
+    if (wranglerVersion < 3) {
+      $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
+    } else {
+      $$ npx wrangler@${wranglerVersion} pages deploy "${directory}" --project-name="${projectName}" --branch="${branch}"
+    }
     `;
     const response = await (0, import_undici.fetch)(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
@@ -25091,10 +25095,10 @@ try {
   const createJobSummary = async ({ deployment, aliasUrl }) => {
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
     let status = "\u26A1\uFE0F  Deployment in progress...";
-    if (deployStage?.status === "success") {
-      status = "\u2705  Deploy successful!";
-    } else if (deployStage?.status === "failure") {
+    if (deployStage?.status === "failure") {
       status = "\u{1F6AB}  Deployment failed";
+    } else {
+      status = "\u2705  Deploy successful!";
     }
     await import_core.summary.addRaw(
       `
