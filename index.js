@@ -23589,6 +23589,7 @@ try {
   const branch = (0, import_core.getInput)("branch", { required: false });
   const workingDirectory = (0, import_core.getInput)("workingDirectory", { required: false });
   const wranglerVersion = (0, import_core.getInput)("wranglerVersion", { required: false });
+  const includeLogs = (0, import_core.getInput)("includeLogs", { required: false });
   const getProject = async () => {
     const response = await (0, import_undici.fetch)(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}`,
@@ -23684,13 +23685,45 @@ try {
       auto_inactive: false
     });
   };
-  const createJobSummary = async ({ deployment, aliasUrl }) => {
+  const getDeploymentStatus = async ({ deployment }) => {
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
+    let failure = false;
     let status = "\u26A1\uFE0F  Deployment in progress...";
     if (deployStage?.status === "failure") {
       status = "\u{1F6AB}  Deployment failed";
     } else {
       status = "\u2705  Deploy successful!";
+    }
+    return [failure, status];
+  };
+  const getDeploymentLogs = async ({ failure, deployment }) => {
+    if (!failure && includeLogs) {
+      let messages = [];
+      return { data: messages, total: 0, includes_container_logs: false };
+    }
+    const deploymentIdentifier = deployment.id;
+    const response = await (0, import_undici.fetch)(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments/${deploymentIdentifier}/history/logs`,
+      { headers: { Authorization: `Bearer ${apiToken}` } }
+    );
+    if (response.status !== 200) {
+      console.error(`Cloudflare API returned non-200: ${response.status}`);
+      const json = await response.text();
+      console.error(`API returned: ${json}`);
+      throw new Error("Failed to get Pages Deployment Logs, API returned non-200");
+    }
+    const {
+      result: [logs]
+    } = await response.json();
+    return logs;
+  };
+  const createJobSummary = async ({ deployment, aliasUrl, status, logs }) => {
+    let logLines = "";
+    if (logs.total > 0) {
+      for (let message of logs.data) {
+        logLines = logLines.concat(`${message.ts} ${message.line}
+`);
+      }
     }
     await import_core.summary.addRaw(
       `
@@ -23723,7 +23756,9 @@ try {
       alias = pagesDeployment.aliases[0];
     }
     (0, import_core.setOutput)("alias", alias);
-    await createJobSummary({ deployment: pagesDeployment, aliasUrl: alias });
+    const [failure, pagesDeploymentStatus] = await getDeploymentStatus({ deployment: pagesDeployment });
+    const logs = getDeploymentLogs({ failure, deployment: pagesDeployment });
+    await createJobSummary({ deployment: pagesDeployment, aliasUrl: alias, status: pagesDeploymentStatus, logs });
     if (gitHubDeployment) {
       const octokit = (0, import_github.getOctokit)(gitHubToken);
       await createGitHubDeploymentStatus({
