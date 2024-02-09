@@ -38,28 +38,59 @@ try {
 		return result;
 	};
 
+	const fetchDeploymentMetadata = async (url: string) => {
+		const response = await fetch(
+			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
+			{ headers: { Authorization: `Bearer ${apiToken}` } }
+		);
+
+		const deployments = (await response.json()) as { result: Deployment[] };
+		const deployment = deployments.result.find((deployment) => deployment.url === url);
+
+		if (!deployment) {
+			throw new Error("Failed to get deployment from Cloudflare API");
+		}
+
+		return deployment;
+	};
+
+	const tryToGetDeployment = async (url: string, retries = 0) => {
+		if (retries >= 5) {
+			throw new Error("Failed to get deployment from Cloudflare API");
+		}
+
+		const deployment = await fetchDeploymentMetadata(url);
+
+		const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
+
+		// A deployment exists and has completed
+		if (deployStage && deployStage.ended_on) {
+			return deployment;
+		}
+
+		console.log("Waiting for deployment to finish...");
+		await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+		return tryToGetDeployment(url, retries + 1);
+	};
+
 	const createPagesDeployment = async () => {
-		// TODO: Replace this with an API call to wrangler so we can get back a full deployment response object
-		await shellac.in(path.join(process.cwd(), workingDirectory))`
+	const out = await shellac.in(path.join(process.cwd(), workingDirectory))`
     $ export CLOUDFLARE_API_TOKEN="${apiToken}"
     if ${accountId} {
       $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
     }
   
-    if (wranglerVersion < 3) {
-      $$ npx wrangler@${wranglerVersion} pages publish "${directory}" --project-name="${projectName}" --branch="${branch}"
-    } else {
       $$ npx wrangler@${wranglerVersion} pages deploy "${directory}" --project-name="${projectName}" --branch="${branch}"
-    }
     `;
 
-		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments`,
-			{ headers: { Authorization: `Bearer ${apiToken}` } }
-		);
-		const {
-			result: [deployment],
-		} = (await response.json()) as { result: Deployment[] };
+		const url = out.stdout.match(/(https:.*)$/)?.[1];
+
+		if (!url) {
+			throw new Error("Failed to get deployment URL from wrangler output");
+		}
+
+		const deployment = await tryToGetDeployment(url);
 
 		return deployment;
 	};
@@ -170,7 +201,7 @@ try {
 
 			await createGitHubDeploymentStatus({
 				id: gitHubDeployment.id,
-				url: pagesDeployment.url,
+				url: alias,
 				deploymentId: pagesDeployment.id,
 				environmentName,
 				productionEnvironment,
