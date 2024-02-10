@@ -1,8 +1,8 @@
-name: "Cloudflare Pages GitHub Action"
-description: "Publish to Cloudflare Pages"
+name: "CF-Pages Deploy Action"
+description: "Customized Action for CF-Pages deployment"
 branding:
-  icon: "upload-cloud"
-  color: "orange"
+  icon: "sunrise"
+  color: "yellow"
 inputs:
   apiToken:
     description: "Cloudflare API Token"

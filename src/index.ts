@@ -1,9 +1,9 @@
-import {getInput, setFailed, setOutput, summary} from "@actions/core";
-import type {Deployment, Project, LogMessage, UnifiedDeploymentLogMessages} from "@cloudflare/types";
-import {context, getOctokit} from "@actions/github";
+import { getInput, setFailed, setOutput, summary } from "@actions/core";
+import type { Deployment, Project, LogMessage, UnifiedDeploymentLogMessages } from "@cloudflare/types";
+import { context, getOctokit } from "@actions/github";
 import shellac from "shellac";
-import {fetch} from "undici";
-import {env} from "process";
+import { fetch } from "undici";
+import { env } from "process";
 import path from "node:path";
 
 type Octokit = ReturnType<typeof getOctokit>;
@@ -17,7 +17,7 @@ try {
 	const branch = getInput("branch", { required: false });
 	const workingDirectory = getInput("workingDirectory", { required: false });
 	const wranglerVersion = getInput("wranglerVersion", { required: false });
-	const includeLogs = getInput("includeLogs", {required: false});
+	const includeLogs = getInput("includeLogs", { required: false });
 
 	const getProject = async () => {
 		const response = await fetch(
@@ -76,7 +76,7 @@ try {
 	};
 
 	const createPagesDeployment = async () => {
-	const out = await shellac.in(path.join(process.cwd(), workingDirectory))`
+		const out = await shellac.in(path.join(process.cwd(), workingDirectory))`
     $ export CLOUDFLARE_API_TOKEN="${apiToken}"
     if ${accountId} {
       $ export CLOUDFLARE_ACCOUNT_ID="${accountId}"
@@ -145,7 +145,7 @@ try {
 		});
 	};
 
-	const getDeploymentStatus = async({deployment}: {deployment: Deployment}) => {
+	const getDeploymentStatus = async ({ deployment }: { deployment: Deployment }) => {
 		const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
 		let failure: boolean = false;
 
@@ -157,15 +157,15 @@ try {
 		}
 
 		return [failure, status] as const;
-	}
+	};
 
-	const getDeploymentLogs = async({failure, deployment}: {failure: boolean, deployment: Deployment}) => {
+	const getDeploymentLogs = async ({ failure, deployment }: { failure: boolean; deployment: Deployment }) => {
 		if (!failure && includeLogs) {
 			let messages: LogMessage[] = [];
-			return {data: messages, total: 0, includes_container_logs: false} as UnifiedDeploymentLogMessages;
+			return { data: messages, total: 0, includes_container_logs: false } as UnifiedDeploymentLogMessages;
 		}
 
-		const deploymentIdentifier = deployment.id
+		const deploymentIdentifier = deployment.id;
 
 		const response = await fetch(
 			`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/deployments/${deploymentIdentifier}/history/logs`,
@@ -183,13 +183,23 @@ try {
 		} = (await response.json()) as { result: UnifiedDeploymentLogMessages };
 
 		return logs;
-	}
+	};
 
-	const createJobSummary = async ({ deployment, aliasUrl, status, logs }: { deployment: Deployment; aliasUrl: string, status: string, logs: UnifiedDeploymentLogMessages })  => {
-		let logLines: string = ''
-		if (logs.total > 0 ){
+	const createJobSummary = async ({
+		deployment,
+		aliasUrl,
+		status,
+		logs,
+	}: {
+		deployment: Deployment;
+		aliasUrl: string;
+		status: string;
+		logs: UnifiedDeploymentLogMessages;
+	}) => {
+		let logLines: string = "";
+		if (logs.total > 0) {
 			for (let message of logs.data) {
-				logLines = logLines.concat(`${message.ts} ${message.line}\n`)
+				logLines = logLines.concat(`${message.ts} ${message.line}\n`);
 			}
 		}
 
@@ -233,10 +243,10 @@ try {
 		}
 		setOutput("alias", alias);
 
-		const [failure, pagesDeploymentStatus] = await getDeploymentStatus( {deployment: pagesDeployment});
-		const logs: UnifiedDeploymentLogMessages = getDeploymentLogs({failure: failure, deployment: pagesDeployment})
+		const [failure, pagesDeploymentStatus] = await getDeploymentStatus({ deployment: pagesDeployment });
+		const logs: UnifiedDeploymentLogMessages = getDeploymentLogs({ failure: failure, deployment: pagesDeployment });
 
-		await createJobSummary( { deployment: pagesDeployment, aliasUrl: alias, status: pagesDeploymentStatus, logs: logs });
+		await createJobSummary({ deployment: pagesDeployment, aliasUrl: alias, status: pagesDeploymentStatus, logs: logs });
 
 		if (gitHubDeployment) {
 			const octokit = getOctokit(gitHubToken);

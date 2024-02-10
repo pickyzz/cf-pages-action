@@ -23717,7 +23717,12 @@ try {
     } = await response.json();
     return logs;
   };
-  const createJobSummary = async ({ deployment, aliasUrl, status, logs }) => {
+  const createJobSummary = async ({
+    deployment,
+    aliasUrl,
+    status,
+    logs
+  }) => {
     let logLines = "";
     if (logs.total > 0) {
       for (let message of logs.data) {
