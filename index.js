@@ -23589,7 +23589,7 @@ try {
   const branch = (0, import_core.getInput)("branch", { required: false });
   const workingDirectory = (0, import_core.getInput)("workingDirectory", { required: false });
   const wranglerVersion = (0, import_core.getInput)("wranglerVersion", { required: false });
-  const includeLogs = (0, import_core.getInput)("includeLogs", { required: false });
+  const logsOnFailure = (0, import_core.getInput)("logsOnFailure", { required: false });
   const getProject = async () => {
     const response = await (0, import_undici.fetch)(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}`,
@@ -23689,15 +23689,15 @@ try {
     const deployStage = deployment.stages.find((stage) => stage.name === "deploy");
     let failure = false;
     let status = "\u26A1\uFE0F  Deployment in progress...";
-    if (deployStage?.status === "failure") {
+    if (deployStage?.status === "success") {
+      status = "\u2705  Deployment successful!";
+    } else if (deployStage?.status === "failure") {
       status = "\u{1F6AB}  Deployment failed";
-    } else {
-      status = "\u2705  Deploy successful!";
     }
     return [failure, status];
   };
   const getDeploymentLogs = async ({ failure, deployment }) => {
-    if (!failure && includeLogs) {
+    if (!failure && logsOnFailure) {
       let messages = [];
       return { data: messages, total: 0, includes_container_logs: false };
     }

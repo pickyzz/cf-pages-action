@@ -38,7 +38,7 @@
              workingDirectory: my-site
              # Optional: Change the Wrangler version, allows you to point to a specific version or a tag such as `beta`
              wranglerVersion: "3"
-             includeLogs: false
+             logsOnFailure: false
    ```
 
 **Replace `YOUR_ACCOUNT_ID`, `YOUR_PROJECT_NAME` and `YOUR_BUILD_OUTPUT_DIRECTORY` with the appropriate values to your Pages project.**

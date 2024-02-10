@@ -17,7 +17,7 @@ try {
 	const branch = getInput("branch", { required: false });
 	const workingDirectory = getInput("workingDirectory", { required: false });
 	const wranglerVersion = getInput("wranglerVersion", { required: false });
-	const includeLogs = getInput("includeLogs", { required: false });
+	const logsOnFailure = getInput("logsOnFailure", { required: false });
 
 	const getProject = async () => {
 		const response = await fetch(
@@ -150,17 +150,17 @@ try {
 		let failure: boolean = false;
 
 		let status = "⚡️  Deployment in progress...";
-		if (deployStage?.status === "failure") {
+		if (deployStage?.status === "success") {
+			status = "✅  Deployment successful!";
+		} else if (deployStage?.status === "failure") {
 			status = "🚫  Deployment failed";
-		} else {
-			status = "✅  Deploy successful!";
 		}
 
 		return [failure, status] as const;
 	};
 
 	const getDeploymentLogs = async ({ failure, deployment }: { failure: boolean; deployment: Deployment }) => {
-		if (!failure && includeLogs) {
+		if (!failure && logsOnFailure) {
 			let messages: LogMessage[] = [];
 			return { data: messages, total: 0, includes_container_logs: false } as UnifiedDeploymentLogMessages;
 		}
