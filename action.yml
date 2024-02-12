@@ -28,7 +28,7 @@ inputs:
   wranglerVersion:
     description: "The version of Wrangler to use"
     required: false
-    default: "2"
+    default: "3"
   logsOnFailure:
     description: "Include logs from failed deployments in the deployment summary"
     required: false

@@ -36,8 +36,9 @@
              branch: main
              # Optional: Change the working directory
              workingDirectory: my-site
-             # Optional: Change the Wrangler version, allows you to point to a specific version or a tag such as `beta`
+             # Optional: Change the Wrangler version, allows you to point to a specific version or a tag such as `beta` default 3
              wranglerVersion: "3"
+             # Generate logs when deploying fail
              logsOnFailure: false
    ```
 
