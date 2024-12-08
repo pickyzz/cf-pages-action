@@ -1,4 +1,6 @@
-# cf-pages-action
+# Note: Due to old API is no longer support. Please use new [official Cloudflare's Wrangler 3](https://github.com/cloudflare/wrangler-action) action instead.
+
+## cf-pages-action [customized]
 
 ## Usage
 
